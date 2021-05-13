@@ -63,25 +63,19 @@ function Autobind(_target: any, _methodName: string, methodDescriptor: PropertyD
 }
 
 class Project {
-  constructor(
-    public id: string,
-    public title: string,
-    public description: string,
-    public people: number,
-    public status: ProjectStatus.Active | ProjectStatus.Finished
-  ) {}
+  constructor(public id: string, public title: string, public description: string, public people: number, public status: 'active' | 'finished') {}
 }
 
 // Project State Management
 
-type Listener<T> = (item: T) => void;
+type Listener<T> = (item: T[]) => void;
 
 class StateBase<T> {
   protected listeners: Listener<T>[] = [];
 
-  protected notifyListeners(item: T) {
+  protected notifyListeners(items: T[]) {
     this.listeners.forEach((listener) => {
-      listener(item);
+      listener(items);
     });
   }
 
@@ -117,7 +111,15 @@ class ProjectState extends StateBase<Project> {
   addProject(project: Project) {
     this.projects.push(project);
 
-    this.notifyListeners(project);
+    this.notifyListeners(this.projects);
+  }
+
+  modifyProjectById(modifiedProject: Project) {
+    const indexOfModifiedProject = this.projects.findIndex((project) => project.id === modifiedProject.id);
+
+    this.projects.splice(indexOfModifiedProject, 1, modifiedProject);
+
+    this.notifyListeners([...this.projects]);
   }
 }
 
@@ -170,9 +172,7 @@ class ProjectItem extends ProjectBase<HTMLUListElement, HTMLLIElement> implement
     event.dataTransfer!.effectAllowed = 'move';
   }
   @Autobind
-  dragEndHandler(_event: DragEvent) {
-    console.log(this);
-  }
+  dragEndHandler(_event: DragEvent) {}
 }
 
 class ProjectList extends ProjectBase<HTMLDivElement, HTMLElement> implements DragTarget {
@@ -180,21 +180,17 @@ class ProjectList extends ProjectBase<HTMLDivElement, HTMLElement> implements Dr
   private listTitleElement: HTMLHeadElement;
   private listContainerElement: HTMLUListElement;
 
-  constructor(listType: ProjectStatus.Active | ProjectStatus.Finished) {
+  constructor(public listType: 'active' | 'finished') {
     super('project-list', 'app');
     this.listTitleElement = <HTMLHeadElement>this.elementForRender.querySelector('h2');
     this.listContainerElement = <HTMLUListElement>this.elementForRender.querySelector('ul');
 
     this.listTitleElement.innerHTML = `${listType} Projects`.toUpperCase();
     this.elementForRender.id = `${listType}-projects`;
-    this.listContainerElement.id = 'project-list-container';
+    this.listContainerElement.id = `${listType}-project-list-container`;
 
-    projectState.addListener((project: Project) => {
-      if (project.status === listType) {
-        const newProject = new ProjectItem(this.listContainerElement.id, project);
-
-        this.assignedProjects.push(newProject.project);
-      }
+    projectState.addListener((projects: Project[]) => {
+      this.reRenderList(projects, listType);
     });
 
     this.addEventToElement(this.listContainerElement, 'dragover', this.dragOverHandler);
@@ -202,6 +198,17 @@ class ProjectList extends ProjectBase<HTMLDivElement, HTMLElement> implements Dr
     this.addEventToElement(this.listContainerElement, 'drop', this.dropHandler);
 
     this.appendElementToParent('beforeend');
+  }
+
+  reRenderList(projects: Project[], listType: 'active' | 'finished') {
+    this.listContainerElement.innerHTML = '';
+
+    projects.forEach((project) => {
+      if (project.status === listType) {
+        const newProject = new ProjectItem(this.listContainerElement.id, project);
+        this.assignedProjects.push(newProject.project);
+      }
+    });
   }
 
   @Autobind
@@ -220,8 +227,21 @@ class ProjectList extends ProjectBase<HTMLDivElement, HTMLElement> implements Dr
     this.listContainerElement.classList.remove('droppable');
   }
 
+  @Autobind
   dropHandler(event: DragEvent) {
-    console.log(event.dataTransfer!.getData('text/plain'));
+    if (event.dataTransfer) {
+      const droppedProjectId = event.dataTransfer.getData('text/plain');
+
+      const project = this.assignedProjects.find((project) => project.id === droppedProjectId);
+
+      if (project) {
+        project.status = this.listType === 'active' ? ProjectStatus.Finished : ProjectStatus.Active;
+        projectState.modifyProjectById(project);
+
+        this.listContainerElement.classList.remove('droppable');
+        event.preventDefault();
+      }
+    }
   }
 }
 
