@@ -114,12 +114,14 @@ class ProjectState extends StateBase<Project> {
     this.notifyListeners(this.projects);
   }
 
-  modifyProjectById(modifiedProject: Project) {
-    const indexOfModifiedProject = this.projects.findIndex((project) => project.id === modifiedProject.id);
+  modifyProjectById(projectId: string, listType: 'active' | 'finished') {
+    const indexOfProject = this.projects.findIndex((project) => project.id === projectId);
 
-    this.projects.splice(indexOfModifiedProject, 1, modifiedProject);
+    if (this.projects[indexOfProject].status !== listType) {
+      this.projects[indexOfProject].status = listType;
 
-    this.notifyListeners([...this.projects]);
+      this.notifyListeners([...this.projects]);
+    }
   }
 }
 
@@ -172,7 +174,9 @@ class ProjectItem extends ProjectBase<HTMLUListElement, HTMLLIElement> implement
     event.dataTransfer!.effectAllowed = 'move';
   }
   @Autobind
-  dragEndHandler(_event: DragEvent) {}
+  dragEndHandler(event: DragEvent) {
+    console.log(event);
+  }
 }
 
 class ProjectList extends ProjectBase<HTMLDivElement, HTMLElement> implements DragTarget {
@@ -232,15 +236,9 @@ class ProjectList extends ProjectBase<HTMLDivElement, HTMLElement> implements Dr
     if (event.dataTransfer) {
       const droppedProjectId = event.dataTransfer.getData('text/plain');
 
-      const project = this.assignedProjects.find((project) => project.id === droppedProjectId);
+      projectState.modifyProjectById(droppedProjectId, this.listType === 'active' ? 'active' : 'finished');
 
-      if (project) {
-        project.status = this.listType === 'active' ? ProjectStatus.Finished : ProjectStatus.Active;
-        projectState.modifyProjectById(project);
-
-        this.listContainerElement.classList.remove('droppable');
-        event.preventDefault();
-      }
+      event.preventDefault();
     }
   }
 }
