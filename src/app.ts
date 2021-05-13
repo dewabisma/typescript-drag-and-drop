@@ -133,7 +133,7 @@ class ProjectBase<T extends HTMLElement, U extends HTMLElement> {
   }
 
   protected cloneTemplateElementContent() {
-    return <U>this.templateElement.content.firstElementChild?.cloneNode(true);
+    return <U>this.templateElement.content.firstElementChild!.cloneNode(true);
   }
 
   protected appendElementToParent(position: InsertPosition) {
@@ -141,7 +141,21 @@ class ProjectBase<T extends HTMLElement, U extends HTMLElement> {
   }
 }
 
+class ProjectItem extends ProjectBase<HTMLUListElement, HTMLLIElement> {
+  constructor(parentElementId: string, public project: Project) {
+    super('single-project', parentElementId);
+
+    this.elementForRender.querySelector('h2')!.innerHTML = project.title;
+    this.elementForRender.querySelector('h3')!.innerHTML =
+      project.people > 1 ? `${project.people} People` : `1 Person`;
+    this.elementForRender.querySelector('p')!.innerHTML = project.description;
+
+    this.appendElementToParent('beforeend');
+  }
+}
+
 class ProjectList extends ProjectBase<HTMLDivElement, HTMLElement> {
+  private assignedProjects: Project[] = [];
   private listTitleElement: HTMLHeadElement;
   private listContainerElement: HTMLUListElement;
 
@@ -156,13 +170,16 @@ class ProjectList extends ProjectBase<HTMLDivElement, HTMLElement> {
 
     this.listTitleElement.innerHTML = `${listType} Projects`.toUpperCase();
     this.elementForRender.id = `${listType}-projects`;
+    this.listContainerElement.id = 'project-list-container';
 
-    projectState.addListener((project: any) => {
+    projectState.addListener((project: Project) => {
       if (project.status === listType) {
-        const liElement = document.createElement('li');
-        liElement.innerHTML = project.title;
+        const newProject = new ProjectItem(
+          this.listContainerElement.id,
+          project
+        );
 
-        this.listContainerElement.append(liElement);
+        this.assignedProjects.push(newProject.project);
       }
     });
 
