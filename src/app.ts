@@ -3,6 +3,16 @@ enum ProjectStatus {
   Finished = 'finished',
 }
 
+interface Draggable {
+  dragStartHandler(event: DragEvent): void;
+  dragEndHandler(event: DragEvent): void;
+}
+
+interface DragTarget {
+  dragOverHandler(event: DragEvent): void;
+  dropHandler(event: DragEvent): void;
+  dragLeaveHandler(event: DragEvent): void;
+}
 interface Validatable {
   value: string | number;
   required?: boolean;
@@ -139,9 +149,20 @@ class ProjectBase<T extends HTMLElement, U extends HTMLElement> {
   protected appendElementToParent(position: InsertPosition) {
     this.parentElement.insertAdjacentElement(position, this.elementForRender);
   }
+
+  protected addEventToElement(
+    element: HTMLElement,
+    eventType: keyof HTMLElementEventMap,
+    eventFunction: (...args: any) => any
+  ) {
+    element.addEventListener(eventType, eventFunction);
+  }
 }
 
-class ProjectItem extends ProjectBase<HTMLUListElement, HTMLLIElement> {
+class ProjectItem
+  extends ProjectBase<HTMLUListElement, HTMLLIElement>
+  implements Draggable
+{
   constructor(parentElementId: string, public project: Project) {
     super('single-project', parentElementId);
 
@@ -150,7 +171,28 @@ class ProjectItem extends ProjectBase<HTMLUListElement, HTMLLIElement> {
       project.people > 1 ? `${project.people} People` : `1 Person`;
     this.elementForRender.querySelector('p')!.innerHTML = project.description;
 
+    this.addEventToElement(
+      this.elementForRender,
+      'dragstart',
+      this.dragStartHandler
+    );
+
+    this.addEventToElement(
+      this.elementForRender,
+      'dragend',
+      this.dragEndHandler
+    );
+
     this.appendElementToParent('beforeend');
+  }
+
+  @Autobind
+  dragStartHandler(_event: DragEvent) {
+    console.log(this);
+  }
+  @Autobind
+  dragEndHandler(_event: DragEvent) {
+    console.log(this);
   }
 }
 
@@ -269,14 +311,6 @@ class ProjectInput extends ProjectBase<HTMLDivElement, HTMLFormElement> {
 
       this.clearInput();
     }
-  }
-
-  private addEventToElement(
-    element: HTMLElement,
-    eventType: keyof HTMLElementEventMap,
-    eventFunction: (...args: any) => any
-  ) {
-    element.addEventListener(eventType, eventFunction);
   }
 }
 
