@@ -1,14 +1,14 @@
 import path from 'path';
+import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 
 export default {
-  mode: 'development',
+  mode: 'production',
   entry: './src/app.ts',
   output: {
     filename: 'bundle.js',
     path: path.join(path.resolve(), '/dist'),
-    publicPath: '/dist',
   },
-  devtool: 'inline-source-map',
+  devtool: 'none',
   module: {
     rules: [
       {
@@ -21,4 +21,5 @@ export default {
   resolve: {
     extensions: ['.ts', '.js'],
   },
+  plugin: [CleanWebpackPlugin],
 };

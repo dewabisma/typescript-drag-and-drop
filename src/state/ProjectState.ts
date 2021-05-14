@@ -1,5 +1,5 @@
-import { StateBase } from './StateBase.js';
-import { Project } from '../class/Project.js';
+import { StateBase } from './StateBase';
+import { Project } from '../class/Project';
 
 // Project State Management
 export class ProjectState extends StateBase<Project> {

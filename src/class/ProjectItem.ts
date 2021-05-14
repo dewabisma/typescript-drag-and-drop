@@ -1,7 +1,7 @@
-import { ProjectBase } from './ProjectBase.js';
-import { Draggable } from '../interface/DragAndDrop.js';
-import { Project } from '../class/Project.js';
-import { Autobind } from '../decorators/autobind.js';
+import { ProjectBase } from './ProjectBase';
+import { Draggable } from '../interface/DragAndDrop';
+import { Project } from '../class/Project';
+import { Autobind } from '../decorators/autobind';
 
 export class ProjectItem extends ProjectBase<HTMLUListElement, HTMLLIElement> implements Draggable {
   constructor(parentElementId: string, public project: Project) {
