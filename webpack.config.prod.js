@@ -8,7 +8,6 @@ export default {
     filename: 'bundle.js',
     path: path.join(path.resolve(), '/dist'),
   },
-  devtool: 'none',
   module: {
     rules: [
       {
@@ -21,5 +20,5 @@ export default {
   resolve: {
     extensions: ['.ts', '.js'],
   },
-  plugin: [CleanWebpackPlugin],
+  plugins: [new CleanWebpackPlugin()],
 };
